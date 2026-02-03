@@ -59,5 +59,5 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	resFile.WriteString(str)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Файл успешно обработан\n")
+	fmt.Fprint(w, str)
 }
