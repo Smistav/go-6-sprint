@@ -15,7 +15,7 @@ import (
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := os.ReadFile("index.html")
 	if err != nil {
-		http.Error(w, "Не удалось загрузить страницу", http.StatusInternalServerError)
+		http.Error(w, "Page loading error", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -26,24 +26,28 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 // UploadHandler обрабатывает \upload эндпоинт
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	err := r.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
-		http.Error(w, "Ошибка парсинга формы", http.StatusInternalServerError)
+		http.Error(w, "Form parsing error", http.StatusInternalServerError)
 		return
 	}
 	file, handler, err := r.FormFile("myFile")
 	if err != nil {
-		http.Error(w, "ошибка при получении файла", http.StatusBadRequest)
+		http.Error(w, "File receiving error", http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
 	if handler.Size == 0 {
-		http.Error(w, "Файл пустой", http.StatusBadRequest)
+		http.Error(w, "File empty", http.StatusInternalServerError)
 		return
 	}
 	data, err := io.ReadAll(file)
 	if err != nil {
-		http.Error(w, "Ошибка чтения файла", http.StatusInternalServerError)
+		http.Error(w, "File reading error", http.StatusInternalServerError)
 		return
 	}
 	str, err := service.Convert(string(data))
@@ -56,7 +60,11 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	defer resFile.Close()
-	resFile.WriteString(str)
+	_, err = resFile.WriteString(str)
+	if err != nil {
+		http.Error(w, "File writing error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, str)
